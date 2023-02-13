@@ -45,19 +45,19 @@ namespace LaunchDarkly.InitializeTimeout.Demo
                 {
                     Name = "Demo Project1", //JASells-Playground
                     Environments = new LdEnvironment[]
-                                  {
-                                      new LdEnvironment
-                                      {
-                                        Name = "Test",
-                                        MobileSdkKey="mob-250c78a9-79a9-40b6-9b05-329ce8b2295e",
-                                      },
-                                      new LdEnvironment
-                                      {
-                                        Name = "Production",
-                                        MobileSdkKey="mob-eafac57c-a768-4e15-960d-2ef1cb585bb0",
-                                      }
-                                  }
-                }
+                    {
+                        new LdEnvironment
+                        {
+                            Name = "Test",
+                            MobileSdkKey="mob-250c78a9-79a9-40b6-9b05-329ce8b2295e",
+                        },
+                        new LdEnvironment
+                        {
+                            Name = "Production",
+                            MobileSdkKey="mob-eafac57c-a768-4e15-960d-2ef1cb585bb0",
+                        },
+                    },
+                },
             };
 
             Projects = projects;
@@ -87,6 +87,11 @@ namespace LaunchDarkly.InitializeTimeout.Demo
                     var result = 
                     await InitLD(SelectedEnvironment.MobileSdkKey).ConfigureAwait(false);
                     
+                    if (result.Success)
+                    {
+                        LaunchDarklyClient!.FlagTracker.FlagValueChanged += LD_FlagValueChanged;
+                    }
+
                     SetDisplayText(result);
 
                     EnablePickers = true;
@@ -103,8 +108,21 @@ namespace LaunchDarkly.InitializeTimeout.Demo
 
         private void CleanUpLdClient()
         {
+            if (LaunchDarklyClient != null)
+            {
+                LaunchDarklyClient.FlagTracker.FlagValueChanged -= LD_FlagValueChanged;
+            }
+
             LaunchDarklyClient?.Dispose();
             LaunchDarklyClient = null;
+        }
+
+        private void LD_FlagValueChanged(object sender, FlagValueChangeEvent e)
+        {
+            if (e.Key.Equals(_flag1Key))
+            {
+                Flag1Display = $"TestFlag1 evaluated as: '{e.NewValue.AsBool}'";
+            }
         }
 
         private void SetDisplayText(AsyncResult<ILdClient> result)
@@ -114,7 +132,7 @@ namespace LaunchDarkly.InitializeTimeout.Demo
                            : LdInitDisplay;
 
             Flag1Display = LaunchDarklyClient != null
-                           ? $"TestFlag1 evaluated as: '{LaunchDarklyClient.BoolVariation("testFlag1", false)}'"
+                           ? $"TestFlag1 evaluated as: '{LaunchDarklyClient.BoolVariation(_flag1Key, false)}'"
                            : Flag1Display;
             
             string? err = result.Error?.Message ?? null;
@@ -161,5 +179,7 @@ namespace LaunchDarkly.InitializeTimeout.Demo
                 }
                 return LaunchDarklyClient;
             });
+
+        private const string _flag1Key = "testFlag1";
     }
 }
