@@ -116,8 +116,10 @@ namespace LaunchDarkly.InitializeTimeout.Demo
             Flag1Display = LaunchDarklyClient != null
                            ? $"TestFlag1 evaluated as: '{LaunchDarklyClient.BoolVariation("testFlag1", false)}'"
                            : Flag1Display;
+            
+            string? err = result.Error?.Message ?? null;
+            LastError = err == null ? string.Empty : $"LD error: {err}";
 
-            LastError = result.Error?.Message ?? string.Empty;
         }
 
         private async Task<AsyncResult<ILdClient>> InitLD(string key)
