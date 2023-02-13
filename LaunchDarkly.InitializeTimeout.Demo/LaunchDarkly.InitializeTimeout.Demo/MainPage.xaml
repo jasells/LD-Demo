@@ -9,9 +9,24 @@
         <Frame BackgroundColor="#2196F3" Padding="24" CornerRadius="0">
             <Label Text="Welcome to Xamarin.Forms!" HorizontalTextAlignment="Center" TextColor="White" FontSize="36"/>
         </Frame>
+        
+        <Picker x:Name="ProjectPicker"
+            ItemsSource="{Binding Projects}"
+            ItemDisplayBinding="{Binding Name}"
+            SelectedItem="{Binding SelectedProject}"
+            IsEnabled="{Binding EnablePickers}"/>
+        
+        <Picker 
+            ItemsSource="{Binding Source={x:Reference ProjectPicker},
+                                          Path=SelectedItem.Environments}"
+            ItemDisplayBinding="{Binding Name}"
+            SelectedItem="{Binding SelectedEnvironment}"
+            IsEnabled="{Binding EnablePickers}"/>
+
         <Label Text="{Binding LdInitDisplay}"/>
         <!--IsVisible="{Binding IsInitializedVisible}"-->
         <Label Text="{Binding Flag1Display}"/>
+        <Label Text="{Binding LastError}"/>
     </StackLayout>
 
 </ContentPage>

@@ -18,30 +18,111 @@ namespace LaunchDarkly.InitializeTimeout.Demo
 
         public bool IsInitializedVisible { get; set; }
 
+        public bool EnablePickers { get; set; } = true;
+
         public string LdInitDisplay { get; set; } = "LaunchDarkly not available";
 
-
         public string Flag1Display { get; set; } = "Flag1 not available";
+
+        public string LastError { get; set; } = string.Empty;
+
+        public IList<Project> Projects { get; set; }
+
+        public Project SelectedProject { get; set; }
+
+        public LdEnvironment? SelectedEnvironment { get; set; }
 
         public MainPageViewModel()
         {
             IsInitializedVisible = LaunchDarklyClient?.Initialized ?? false;
 
-            InitLD().ContinueWith(_ =>
-            {
-                LdInitDisplay = LaunchDarklyClient != null
-                               ? $"LaunchDarkly initialized!"
-                               : LdInitDisplay;
+            PropertyChanged += MainPageViewModel_PropertyChanged;
 
-                Flag1Display = LaunchDarklyClient != null
-                               ? $"TestFlag1 evaluated as: '{LaunchDarklyClient.BoolVariation("testFlag1", false)}'"
-                               : Flag1Display;
-            });
+            var projects = new Project[]
+            {
+
+                new Project
+                {
+                    Name = "Demo Project1", //JASells-Playground
+                    Environments = new LdEnvironment[]
+                                  {
+                                      new LdEnvironment
+                                      {
+                                        Name = "Test",
+                                        MobileSdkKey="mob-250c78a9-79a9-40b6-9b05-329ce8b2295e",
+                                      },
+                                      new LdEnvironment
+                                      {
+                                        Name = "Production",
+                                        MobileSdkKey="mob-eafac57c-a768-4e15-960d-2ef1cb585bb0",
+                                      }
+                                  }
+                }
+            };
+
+            Projects = projects;
+
+            //InitLD(projects[0].Environments[0].MobileSdkKey).ContinueWith(_ =>  SetDisplayText());
         }
 
-        private async Task<ILdClient> InitLD()
+        private async void MainPageViewModel_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
-            const string key = "mob-250c78a9-79a9-40b6-9b05-329ce8b2295e";
+            if (e.PropertyName.Equals(nameof(SelectedProject)))
+            {
+                if (SelectedProject != null)
+                {
+                    CleanUpLdClient();
+                    ResetUI();
+                    SelectedEnvironment = null;
+                }
+            }
+            else if (e.PropertyName.Equals(nameof(SelectedEnvironment)))
+            {
+                if (SelectedEnvironment != null)
+                {
+                    CleanUpLdClient();
+                    ResetUI();
+
+                    EnablePickers = false;
+                    var result = 
+                    await InitLD(SelectedEnvironment.MobileSdkKey).ConfigureAwait(false);
+                    
+                    SetDisplayText(result);
+
+                    EnablePickers = true;
+                }
+            }
+        }
+
+        private void ResetUI()
+        {
+            LdInitDisplay = "LaunchDarkly not available";
+            Flag1Display = $"TestFlag1 not available";
+            LastError = string.Empty;
+        }
+
+        private void CleanUpLdClient()
+        {
+            LaunchDarklyClient?.Dispose();
+            LaunchDarklyClient = null;
+        }
+
+        private void SetDisplayText(AsyncResult<ILdClient> result)
+        {
+            LdInitDisplay = LaunchDarklyClient != null
+                           ? $"LaunchDarkly initialized: {result.Result?.Initialized ?? false}"
+                           : LdInitDisplay;
+
+            Flag1Display = LaunchDarklyClient != null
+                           ? $"TestFlag1 evaluated as: '{LaunchDarklyClient.BoolVariation("testFlag1", false)}'"
+                           : Flag1Display;
+
+            LastError = result.Error?.Message ?? string.Empty;
+        }
+
+        private async Task<AsyncResult<ILdClient>> InitLD(string key)
+        {
+            //const string key = "mob-250c78a9-79a9-40b6-9b05-329ce8b2295e";
 
             var context = Context.Builder("anon demo user")
                                  .Anonymous(true)
@@ -54,9 +135,9 @@ namespace LaunchDarkly.InitializeTimeout.Demo
 
             var client = await InitializeLdClient(key, context, result, timeout);
 
-            IsInitializedVisible = client.Initialized;
+            result.Result = client;
 
-            return client;
+            return result;
         }
 
         private Task<ILdClient> InitializeLdClient(string mobileKey, Context context, AsyncResult<ILdClient> result, TimeSpan timeoutSpan) =>
