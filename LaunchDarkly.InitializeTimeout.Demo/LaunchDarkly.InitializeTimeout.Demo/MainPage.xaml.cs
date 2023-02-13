@@ -12,6 +12,8 @@ namespace LaunchDarkly.InitializeTimeout.Demo
     {
         public MainPage()
         {
+            BindingContext = new MainPageViewModel();
+
             InitializeComponent();
         }
     }

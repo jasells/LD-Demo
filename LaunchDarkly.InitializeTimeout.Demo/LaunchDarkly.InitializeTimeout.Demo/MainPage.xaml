@@ -19,6 +19,9 @@
                 </FormattedString>
             </Label.FormattedText>
         </Label>
+        <Label Text="Initialized"
+               IsVisible="{Binding IsInitializedVisible}"
+               />
     </StackLayout>
 
 </ContentPage>
