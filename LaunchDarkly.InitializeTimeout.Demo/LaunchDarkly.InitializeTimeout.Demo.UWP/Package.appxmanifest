@@ -7,7 +7,7 @@
   IgnorableNamespaces="uap mp">
 
   <Identity
-    Name="807D4F80-3398-4787-8B5D-DE5F37D04638"
+    Name="LaunchDarkly.InitializeTimeout.Demo.UWP"
     Publisher="CN=1290EBA9-CC2B-428D-BEB0-F1C422089A27"
     Version="1.0.0.0" />
 
@@ -50,6 +50,5 @@
   </Applications>
 
   <Capabilities>
-    <Capability Name="internetClient" />
-  </Capabilities>
+    <Capability Name="internetClient"/></Capabilities>
 </Package>
