@@ -18,11 +18,25 @@ namespace LaunchDarkly.InitializeTimeout.Demo
 
         public bool IsInitializedVisible { get; set; }
 
+        public string LdInitDisplay { get; set; } = "LaunchDarkly not available";
+
+
+        public string Flag1Display { get; set; } = "Flag1 not available";
+
         public MainPageViewModel()
         {
             IsInitializedVisible = LaunchDarklyClient?.Initialized ?? false;
 
-            _ = InitLD();
+            InitLD().ContinueWith(_ =>
+            {
+                LdInitDisplay = LaunchDarklyClient != null
+                               ? $"LaunchDarkly initialized!"
+                               : LdInitDisplay;
+
+                Flag1Display = LaunchDarklyClient != null
+                               ? $"TestFlag1 evaluated as: '{LaunchDarklyClient.BoolVariation("testFlag1", false)}'"
+                               : Flag1Display;
+            });
         }
 
         private async Task<ILdClient> InitLD()
